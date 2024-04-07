@@ -1,23 +1,21 @@
-import { useDispatch, useSelector } from 'react-redux';
-import { addTrack, pauseTrack, playTrack } from '@/slices/player-slice';
+import React from 'react';
+import { PlayCircleIcon, PauseCircleIcon } from '@heroicons/react/24/outline';
+import { usePlayer } from '@/components/providers/audio-player-provider'; // Adjust the import path as needed
 import { Track } from '@/types/track';
-import { RootState } from '@/store';
-import { PauseCircleIcon } from '@heroicons/react/24/outline';
-import { PlayCircleIcon } from '@heroicons/react/24/outline';
 
-interface PlayPauseButtonProps extends Track {}
+type PlayPauseButtonProps = Omit<Track, 'playing'>
 
 const PlayPauseButton = ({ id, src, progress, duration }: PlayPauseButtonProps) => {
-  const dispatch = useDispatch();
-  const currentTrack = useSelector((state: RootState) => state.player.currentTrack);
-  const isPlaying = currentTrack && currentTrack.id === id && currentTrack.playing;
+  const { state, dispatch } = usePlayer();
+  const isPlaying = state.currentTrack && state.currentTrack.id === id && state.currentTrack.playing;
 
   const togglePlayPause = () => {
     if (isPlaying) {
-      dispatch(pauseTrack());
+      dispatch({ type: 'PAUSE_TRACK' });
     } else {
-      dispatch(playTrack({ id, src, playing: true, progress, duration }));
-      dispatch(addTrack({ id, src, progress, duration }))
+      const newTrack = { id, src, playing: true, progress, duration };
+      dispatch({ type: 'PLAY_TRACK', payload: newTrack });
+      dispatch({ type: 'ADD_TRACK', payload: newTrack });
     }
   };
 

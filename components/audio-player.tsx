@@ -1,21 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { pauseTrack, playTrack, setVolume } from '@/slices/player-slice';
-import { RootState } from '@/store';
-import { PlayCircleIcon } from '@heroicons/react/24/outline';
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, PlayCircleIcon } from '@heroicons/react/24/outline';
 import { PauseCircleIcon } from '@heroicons/react/24/outline';
 import { SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import { SpeakerXMarkIcon } from '@heroicons/react/24/outline';
+import { usePlayer } from '@/components/providers/audio-player-provider';
 
 export default function AudioPlayerComponent() {
-  const dispatch = useDispatch();
-  const volume = useSelector((state: RootState) => state.player.volume);
-  const currentTrack = useSelector((state: RootState) => state.player.currentTrack);
+  const { state, dispatch } = usePlayer();
+  const { volume, currentTrack } = state;
   const isPlaying = currentTrack?.playing || false;
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const playbackSpeedOptions = [1, 1.25, 1.5, 1.75, 2];
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -93,23 +98,43 @@ export default function AudioPlayerComponent() {
   const togglePlayPause = () => {
     if (currentTrack) {
       if (isPlaying) {
-        dispatch(pauseTrack());
+        dispatch({ type: 'PAUSE_TRACK' })
       } else {
-        dispatch(playTrack(currentTrack));
+        dispatch({ type: 'PLAY_TRACK', payload: currentTrack })
       }
     }
   };
 
   const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(event.target.value);
-    dispatch(setVolume(newVolume));
+    dispatch({ type: 'SET_VOLUME', payload: newVolume })
+  };
+
+  const jumpForward = () => {
+    if (audioRef.current) {
+      let newTime = audioRef.current.currentTime + 15;
+      audioRef.current.currentTime = newTime > audioRef.current.duration ? audioRef.current.duration : newTime;
+    }
+  };
+
+  const jumpBack = () => {
+    if (audioRef.current) {
+      let newTime = audioRef.current.currentTime - 15;
+      audioRef.current.currentTime = newTime < 0 ? 0 : newTime;
+    }
   };
 
   return (
     <div className="fixed bottom-0 left-0 right-0">
       <div className="flex items-center justify-between gap-3 bg-gray-800 text-white p-4 max-w-xl mx-auto">
+        <button onClick={jumpBack}>
+          <ArrowUturnLeftIcon className="w-6 h-6" />
+        </button>
         <button onClick={togglePlayPause}>
           {isPlaying ? <PauseCircleIcon className='w-7 h-7' /> : <PlayCircleIcon className='w-7 h-7' />}
+        </button>
+        <button onClick={jumpForward}>
+          <ArrowUturnRightIcon className="w-6 h-6" />
         </button>
         <input 
           type="range" 
@@ -130,9 +155,20 @@ export default function AudioPlayerComponent() {
           />
           <SpeakerWaveIcon className='w-6 h-6' />
         </div>
+        <select
+          value={playbackSpeed}
+          onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+          className="text-black" // Add additional styling as needed
+        >
+          {playbackSpeedOptions.map((speed) => (
+            <option key={speed} value={speed}>
+              {speed}x
+            </option>
+          ))}
+        </select>
         <audio 
           ref={audioRef} 
-          onEnded={() => dispatch(pauseTrack())}
+          onEnded={() => dispatch({ type: 'PAUSE_TRACK' })}
           preload="metadata"
         />
       </div>

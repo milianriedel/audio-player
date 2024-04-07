@@ -1,4 +1,5 @@
 import PlayPauseButton from '@/components/play-button';
+import TrackList from '@/components/tracklist';
 import { Inter } from "next/font/google";
 import Image from 'next/image';
 import Link from 'next/link';
@@ -72,6 +73,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <TrackList />
     </main>
   );
 }
